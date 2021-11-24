@@ -1,0 +1,21 @@
+[package]
+name = "cctl"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = { version = "0.2", features = ["headers", "ws"] }
+clap = "2.33"
+glob = "0.3"
+regex = "1.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_repr = "0.1"
+string-enum-string = { git = "https://github.com/sadesyllas/rust-string-enum-string" }
+tokio = { version = "1.12", features = ["rt-multi-thread", "process", "macros"] }
+tokio-stream = { version = "0.1", features = ["io-util"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
