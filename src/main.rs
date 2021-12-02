@@ -4,6 +4,7 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use config::Config;
+use tracing_subscriber::prelude::*;
 
 mod applet_updater;
 mod config;
@@ -16,10 +17,15 @@ mod web;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .with_timer(tracing_subscriber::fmt::time::time())
-        .init();
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .with_agent_endpoint("localhost:6831")
+        .with_service_name("cctl")
+        .install_simple()
+        .unwrap();
+
+    let opentelemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+    tracing_subscriber::registry().with(opentelemetry).init();
 
     let config = Arc::new(get_config());
 
