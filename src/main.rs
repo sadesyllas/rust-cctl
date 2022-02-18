@@ -1,19 +1,27 @@
 #![feature(async_closure)]
 #![feature(default_free_fn)]
 
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, process::Stdio, sync::Arc};
 
 use config::Config;
+use tokio::{io::AsyncReadExt, process::Command, sync::mpsc};
+use tracing::error;
 use tracing_subscriber::prelude::*;
 
-mod applet_updater;
+use crate::{
+    pubsub::{message::Message, message_topic::MessageTopic},
+    pwcli::Object,
+};
+
+// mod applet_updater;
 mod config;
-mod device;
-mod device_monitor;
+// mod device;
+// mod device_monitor;
 mod pubsub;
-mod util;
-mod watchdog;
-mod web;
+// mod util;
+// mod watchdog;
+// mod web;
+mod pwcli;
 
 #[tokio::main]
 async fn main() {
@@ -27,15 +35,92 @@ async fn main() {
 
     tracing_subscriber::registry().with(opentelemetry).init();
 
-    let config = Arc::new(get_config());
+    // let config = Arc::new(get_config());
 
-    let (pubsub_tx, _) = pubsub::start();
-    tokio::spawn(watchdog::audio::start(pubsub_tx.clone()));
-    tokio::spawn(applet_updater::start(pubsub_tx.clone()));
-    tokio::spawn(device_monitor::start(pubsub_tx.clone()));
-    tokio::spawn(web::server::start(config.clone(), pubsub_tx.clone()))
-        .await
-        .unwrap();
+    let (pubsub_tx, j) = pubsub::start();
+    // tokio::spawn(watchdog::audio::start(pubsub_tx.clone()));
+    // tokio::spawn(applet_updater::start(pubsub_tx.clone()));
+    // tokio::spawn(device_monitor::start(pubsub_tx.clone()));
+    // tokio::spawn(web::server::start(config.clone(), pubsub_tx.clone()))
+    //     .await
+    //     .unwrap();
+
+    let mut cnt = 0;
+    let (tx, mut rx) = mpsc::unbounded_channel();
+    let tx = Arc::new(tx);
+
+    loop {
+        if cnt == 2 {
+            break;
+        }
+
+        pubsub_tx
+            .clone()
+            .lock()
+            .await
+            .send((
+                MessageTopic::Register,
+                Message::Register {
+                    topic: MessageTopic::AudioState,
+                    sender: tx.clone(),
+                },
+            ))
+            .unwrap();
+
+        let parsed_objects = pwcli::get_objects().await.unwrap();
+
+        // println!(
+        //     "les objects:\n{}\ntotal = {}",
+        //     serde_json::to_string_pretty(&parsed_objects).unwrap(),
+        //     parsed_objects.len()
+        // );
+
+        pubsub_tx
+            .clone()
+            .lock()
+            .await
+            .send((
+                MessageTopic::AudioState,
+                Message::AudioState(Arc::new(parsed_objects)),
+            ))
+            .unwrap();
+
+        println!("waiting...");
+        let r = rx.recv().await;
+        let objects = if let Some(Message::AudioState(state)) = r {
+            state
+        } else {
+            println!("error received: {:?}", r);
+            unreachable!();
+        };
+
+        println!("received...");
+
+        // println!("objects: {:?}", objects);
+
+        cnt += 1;
+
+        println!("cnt: {}", cnt);
+    }
+
+    println!("bye");
+
+    // j.await.unwrap();
+
+    // for x in &parsed_objects {
+    //     println!(
+    //         "count={}, parsed id: {}, default: {}, name: {}, type: {}, device id: {:?}, profile #: {}, active profile: {:?}, routes: {}",
+    //         parsed_objects.len(),
+    //         x.id,
+    //         x.default,
+    //         x.name,
+    //         x.r#type,
+    //         x.device_id,
+    //         x.profiles.len(),
+    //         x.profile,
+    //         serde_json::to_string(&x.routes).unwrap()
+    //     );
+    // }
 }
 
 fn get_config() -> Config {

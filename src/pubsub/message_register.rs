@@ -2,10 +2,7 @@ use std::{any::Any, sync::Arc};
 
 use tokio::sync::mpsc::UnboundedSender;
 
-use super::{
-    message::{Message, MessagePayload},
-    message_topic::MessageTopic,
-};
+use super::message_topic::MessageTopic;
 
 #[derive(Debug)]
 pub struct MessageRegister {
@@ -23,11 +20,5 @@ impl MessageRegister {
 
     pub fn tx(&self) -> Arc<UnboundedSender<Message>> {
         self.tx.clone()
-    }
-}
-
-impl MessagePayload for MessageRegister {
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
