@@ -8,7 +8,6 @@ pub mod card_profile;
 mod a2dp_codec;
 mod bluetooth_protocol;
 mod bus;
-mod card_parser;
 mod device_state;
 mod form_factor;
 mod parse_card_devices;

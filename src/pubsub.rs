@@ -1,8 +1,5 @@
 pub mod message;
-pub mod message_register;
-pub mod message_state;
 pub mod message_topic;
-pub mod try_downcast_ref;
 
 use std::{collections::HashMap, sync::Arc};
 
@@ -11,53 +8,47 @@ use tokio::sync::{
     Mutex,
 };
 
-use crate::pubsub::message_state::MessageState;
 use crate::pubsub::message_topic::MessageTopic;
 
-use self::{
-    message::Message, message_register::MessageRegister, try_downcast_ref::try_downcast_ref,
-};
+use self::message::Message;
+
+pub type PubSubMessage = (MessageTopic, Message);
 
 pub fn start() -> (
-    Arc<Mutex<UnboundedSender<Message>>>,
+    Arc<Mutex<UnboundedSender<PubSubMessage>>>,
     tokio::task::JoinHandle<()>,
 ) {
-    let (tx, rx) = mpsc::unbounded_channel::<Message>();
+    let (tx, rx) = mpsc::unbounded_channel::<PubSubMessage>();
 
     let task = tokio::spawn(start_loop(rx));
 
     (Arc::new(Mutex::new(tx)), task)
 }
 
-async fn start_loop(mut rx: UnboundedReceiver<Message>) {
+async fn start_loop(mut rx: UnboundedReceiver<PubSubMessage>) {
     let mut registrations: HashMap<MessageTopic, Vec<Arc<UnboundedSender<Message>>>> =
         HashMap::new();
 
     loop {
         let message = rx.recv().await;
 
-        if let Some(message) = message {
-            if let Some(message) = try_downcast_ref!(message, MessageRegister) {
-                handle_register(message, &mut registrations);
-            } else if try_downcast_ref!(message, (MessageTopic, Arc<MessageState>)).is_some() {
-                if let Some((topic, message)) =
-                    try_downcast_ref!(message, (MessageTopic, Arc<MessageState>)).cloned()
-                {
-                    broadcast(topic, message, &registrations);
-                }
-            }
+        if let Some((MessageTopic::Register, Message::Register { topic, tx })) = message {
+            handle_register(topic, tx, &mut registrations);
+        } else if let Some((topic, message)) = message {
+            broadcast(topic, message, &registrations);
         }
     }
 }
 
 fn handle_register(
-    message: &MessageRegister,
+    topic: MessageTopic,
+    sender: Arc<UnboundedSender<Message>>,
     registrations: &mut HashMap<MessageTopic, Vec<Arc<UnboundedSender<Message>>>>,
 ) {
     registrations
-        .entry(message.topic())
+        .entry(topic)
         .or_insert_with(Vec::new)
-        .push(message.tx());
+        .push(sender);
 }
 
 fn broadcast(

@@ -4,7 +4,10 @@ use regex::Regex;
 
 use crate::util::unquote_parsed_string_value;
 
-use super::card_device::CardDevice;
+use super::{
+    a2dp_codec::A2DPCodec, bluetooth_protocol::BluetoothProtocol, bus::Bus,
+    card_device::CardDevice, device_state::DeviceState, form_factor::FormFactor,
+};
 
 pub fn parse_card_devices(text: &str) -> Vec<CardDevice> {
     let mut card_devices: Vec<CardDevice> = Vec::new();
@@ -86,7 +89,7 @@ pub fn parse_card_devices(text: &str) -> Vec<CardDevice> {
                     let value = captures.name("value").unwrap().as_str();
                     let value = unquote_parsed_string_value(value);
 
-                    current.form_factor = value.as_str().into();
+                    current.form_factor = FormFactor::from_pa_str(value.as_str());
 
                     current_card_device.replace(current);
                 }
@@ -97,7 +100,8 @@ pub fn parse_card_devices(text: &str) -> Vec<CardDevice> {
 
                     let mut current: CardDevice = current_card_device.take().unwrap();
 
-                    current.state = captures.name("value").unwrap().as_str().into();
+                    current.state =
+                        DeviceState::from_pa_str(captures.name("value").unwrap().as_str());
 
                     current_card_device.replace(current);
                 }
@@ -122,7 +126,8 @@ pub fn parse_card_devices(text: &str) -> Vec<CardDevice> {
                     let value = captures.name("value").unwrap().as_str();
                     let value = unquote_parsed_string_value(value);
 
-                    current.bluetooth_protocol = Some(value.as_str().into());
+                    current.bluetooth_protocol =
+                        Some(BluetoothProtocol::from_pa_str(value.as_str()));
 
                     current_card_device.replace(current);
                 }
@@ -135,7 +140,7 @@ pub fn parse_card_devices(text: &str) -> Vec<CardDevice> {
                     let value = captures.name("value").unwrap().as_str();
                     let value = unquote_parsed_string_value(value);
 
-                    current.a2dp_codec = Some(value.as_str().into());
+                    current.a2dp_codec = Some(A2DPCodec::from_pa_str(value.as_str()));
 
                     current_card_device.replace(current);
                 }
@@ -148,7 +153,7 @@ pub fn parse_card_devices(text: &str) -> Vec<CardDevice> {
                     let value = captures.name("value").unwrap().as_str();
                     let value = unquote_parsed_string_value(value);
 
-                    current.bus = value.as_str().into();
+                    current.bus = Bus::from_pa_str(value.as_str());
 
                     current_card_device.replace(current);
                 }

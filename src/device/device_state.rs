@@ -1,19 +1,34 @@
-use string_enum_string::string_enum_string;
+use std::fmt::Display;
 
-use serde_repr::Serialize_repr;
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-#[derive(Clone, Debug, Serialize_repr)]
+#[derive(Clone, Debug, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
-#[string_enum_string]
 pub enum DeviceState {
-    #[variant(display = "running")]
     Running = 1,
-
-    #[variant(display = "idle")]
     Idle = 2,
-
-    #[variant(display = "suspended")]
     Suspended = 3,
+}
+
+impl DeviceState {
+    pub fn from_pa_str(value: &str) -> Self {
+        match value.to_lowercase().as_str() {
+            "running" => DeviceState::Running,
+            "idle" => DeviceState::Idle,
+            "suspended" => DeviceState::Suspended,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Display for DeviceState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DeviceState::Running => f.write_str("running"),
+            DeviceState::Idle => f.write_str("idle"),
+            DeviceState::Suspended => f.write_str("suspended"),
+        }
+    }
 }
 
 impl Default for DeviceState {

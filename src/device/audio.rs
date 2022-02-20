@@ -135,7 +135,7 @@ pub async fn set_card_profile(index: u64, profile: CardProfile) -> io::Result<()
         .args(&[
             "set-card-profile",
             index.to_string().as_str(),
-            profile.as_parsed(),
+            format!("{}", profile).as_str(),
         ])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -148,7 +148,7 @@ pub async fn set_card_profile(index: u64, profile: CardProfile) -> io::Result<()
         error!(
             "Could not set the card index {} to profile {}",
             index,
-            profile.as_parsed()
+            format!("{}", profile).as_str()
         );
     }
 

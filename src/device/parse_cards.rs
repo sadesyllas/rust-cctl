@@ -4,7 +4,7 @@ use regex::Regex;
 
 use crate::{device::bus::Bus, util::unquote_parsed_string_value};
 
-use super::card::Card;
+use super::{card::Card, card_profile::CardProfile, form_factor::FormFactor};
 
 struct ParseContext {
     in_profiles: bool,
@@ -64,7 +64,7 @@ pub fn parse_cards(text: &str) -> Vec<Card> {
                         let value = captures.name("value").unwrap().as_str();
                         let value = unquote_parsed_string_value(value);
 
-                        current.active_profile = value.as_str().into();
+                        current.active_profile = CardProfile::from_pa_str(value.as_str());
                     }
 
                     current_card.replace(current);
@@ -80,7 +80,7 @@ pub fn parse_cards(text: &str) -> Vec<Card> {
                     let value = captures.name("value").unwrap().as_str();
                     let value = unquote_parsed_string_value(value);
 
-                    current.form_factor = value.as_str().into();
+                    current.form_factor = FormFactor::from_pa_str(value.as_str());
 
                     current_card.replace(current);
                 }
@@ -89,7 +89,7 @@ pub fn parse_cards(text: &str) -> Vec<Card> {
                     let value = captures.name("value").unwrap().as_str();
                     let value = unquote_parsed_string_value(value);
 
-                    current.bus = value.as_str().into();
+                    current.bus = Bus::from_pa_str(value.as_str());
 
                     current_card.replace(current);
                 }
@@ -97,7 +97,7 @@ pub fn parse_cards(text: &str) -> Vec<Card> {
                     let mut current: Card = current_card.take().unwrap();
 
                     if parse_context.in_profiles && current.bus == Bus::Bluetooth {
-                        current.profiles.push(matched.into());
+                        current.profiles.push(CardProfile::from_pa_str(matched));
                     }
 
                     if parse_context.in_sinks {

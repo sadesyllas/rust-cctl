@@ -19,17 +19,11 @@ use tracing::{info, instrument, log::debug};
 use crate::{
     config::Config,
     device::{audio, card_device_type::CardDeviceType, card_profile::CardProfile},
-    pubsub::{
-        message::{Message, MessagePayload},
-        message_register::MessageRegister,
-        message_state::MessageState,
-        message_topic::MessageTopic,
-        try_downcast_ref::try_downcast_ref,
-    },
+    pubsub::{message::Message, message_topic::MessageTopic, PubSubMessage},
 };
 
 #[instrument]
-pub async fn start(config: Arc<Config>, pubsub_tx: Arc<Mutex<UnboundedSender<Message>>>) {
+pub async fn start(config: Arc<Config>, pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>) {
     let (tx, rx) = mpsc::unbounded_channel::<Message>();
     let tx = Arc::new(tx);
     let rx = Arc::new(Mutex::new(rx));
@@ -37,10 +31,10 @@ pub async fn start(config: Arc<Config>, pubsub_tx: Arc<Mutex<UnboundedSender<Mes
     pubsub_tx
         .lock()
         .await
-        .send(Arc::new(MessageRegister::new(
-            MessageTopic::AudioState,
-            tx.clone(),
-        )))
+        .send((
+            MessageTopic::Register,
+            Message::new_register(MessageTopic::AudioState, tx.clone()),
+        ))
         .unwrap();
 
     let app = Router::new()
@@ -123,21 +117,17 @@ fn wrap_cors(response: impl IntoResponse) -> impl IntoResponse {
     )
 }
 
-async fn audio_handler(
-    pubsub_tx: Arc<Mutex<UnboundedSender<Arc<dyn MessagePayload + Send + Sync>>>>,
-) -> impl IntoResponse {
+async fn audio_handler(pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>) -> impl IntoResponse {
     debug!("Fetching the state of audio devices in web server");
 
     let (cards, sources, sinks) = audio::fetch_devices().await;
-    let message_state = MessageState::new(Arc::new(cards), Arc::new(sources), Arc::new(sinks));
+    let message_state =
+        Message::new_audio_state(Arc::new(cards), Arc::new(sources), Arc::new(sinks));
 
     pubsub_tx
         .lock()
         .await
-        .send(Arc::new((
-            MessageTopic::AudioState,
-            Arc::new(message_state.clone()),
-        )))
+        .send((MessageTopic::AudioState, message_state.clone()))
         .unwrap();
 
     Json(message_state)
@@ -145,29 +135,25 @@ async fn audio_handler(
 
 async fn ws_handle_upgrade_messages(
     ws: WebSocketUpgrade,
-    rx: Arc<Mutex<UnboundedReceiver<Arc<dyn MessagePayload + Send + Sync>>>>,
+    rx: Arc<Mutex<UnboundedReceiver<Message>>>,
 ) -> impl IntoResponse {
     ws.on_upgrade(async move |socket| ws_handle_messages_socket(socket, rx).await)
 }
 
 async fn ws_handle_messages_socket(
     mut socket: WebSocket,
-    rx: Arc<Mutex<UnboundedReceiver<Arc<dyn MessagePayload + Send + Sync>>>>,
+    rx: Arc<Mutex<UnboundedReceiver<Message>>>,
 ) {
     loop {
-        if let Some(message) = rx.lock().await.recv().await {
-            let message = try_downcast_ref!(message, MessageState).cloned();
+        if let Some(message @ Message::AudioState { .. }) = rx.lock().await.recv().await {
+            debug!("Sending message down the websocket");
 
-            if let Some(message) = message {
-                debug!("Sending message down the websocket");
-
-                if socket
-                    .send(ws::Message::Text(serde_json::to_string(&message).unwrap()))
-                    .await
-                    .is_err()
-                {
-                    return;
-                }
+            if socket
+                .send(ws::Message::Text(serde_json::to_string(&message).unwrap()))
+                .await
+                .is_err()
+            {
+                return;
             }
         }
     }
@@ -187,7 +173,7 @@ async fn handle_volume_request(
         index,
         volume,
     }): Json<VolumeRequest>,
-    pubsub_tx: Arc<Mutex<UnboundedSender<Arc<dyn MessagePayload + Send + Sync>>>>,
+    pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>,
 ) {
     debug!(
         "Setting the volume of {} device index {} to {}",
@@ -209,7 +195,7 @@ struct MuteRequest {
 
 async fn handle_mute_request(
     Json(MuteRequest { _type, index, mute }): Json<MuteRequest>,
-    pubsub_tx: Arc<Mutex<UnboundedSender<Arc<dyn MessagePayload + Send + Sync>>>>,
+    pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>,
 ) {
     debug!(
         "Setting the mute state of {} device index {} to {}",
@@ -231,7 +217,7 @@ struct DefaultRequest {
 
 async fn handle_default_request(
     Json(DefaultRequest { _type, index, name }): Json<DefaultRequest>,
-    pubsub_tx: Arc<Mutex<UnboundedSender<Arc<dyn MessagePayload + Send + Sync>>>>,
+    pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>,
 ) {
     debug!(
         "Setting the default {} device to index {} (name = {})",
@@ -260,7 +246,7 @@ struct ProfileRequest {
 
 async fn handle_profile_request(
     Json(ProfileRequest { index, profile }): Json<ProfileRequest>,
-    pubsub_tx: Arc<Mutex<UnboundedSender<Arc<dyn MessagePayload + Send + Sync>>>>,
+    pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>,
 ) {
     debug!(
         "Setting the default bluetooth card index {} profile to {}",

@@ -7,46 +7,44 @@ use tokio::sync::{
 
 use crate::{
     device::{audio, card_device::CardDevice, card_device_type::CardDeviceType},
-    pubsub::{
-        message::Message, message_register::MessageRegister, message_state::MessageState,
-        message_topic::MessageTopic, try_downcast_ref::try_downcast_ref,
-    },
+    pubsub::{message::Message, message_topic::MessageTopic, PubSubMessage},
 };
 
-pub async fn start(pubsub_tx: Arc<Mutex<UnboundedSender<Message>>>) {
+pub async fn start(pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>) {
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
 
     pubsub_tx
         .lock()
         .await
-        .send(Arc::new(MessageRegister::new(
-            MessageTopic::AudioState,
-            Arc::new(tx),
-        )))
+        .send((
+            MessageTopic::Register,
+            Message::new_register(MessageTopic::AudioState, Arc::new(tx)),
+        ))
         .unwrap();
 
     let mut default_source: Option<CardDevice> = None;
     let mut default_sink: Option<CardDevice> = None;
 
     loop {
-        if let Some(message) = rx.recv().await {
-            if let Some(state) = try_downcast_ref!(message, MessageState) {
-                default_source = state
-                    .sources()
-                    .iter()
-                    .find(|source| source.is_default)
-                    .unwrap()
-                    .clone()
-                    .into();
+        if let Some(Message::AudioState {
+            ref sources,
+            ref sinks,
+            ..
+        }) = rx.recv().await
+        {
+            default_source = sources
+                .iter()
+                .find(|source| source.is_default)
+                .unwrap()
+                .clone()
+                .into();
 
-                default_sink = state
-                    .sinks()
-                    .iter()
-                    .find(|sink| sink.is_default)
-                    .unwrap()
-                    .clone()
-                    .into();
-            }
+            default_sink = sinks
+                .iter()
+                .find(|sink| sink.is_default)
+                .unwrap()
+                .clone()
+                .into();
         }
 
         if let Some(ref source) = default_source {
