@@ -1,6 +1,14 @@
 import type { Writable } from 'svelte/store';
 
-const API_URL = <string>import.meta.env.VITE_API_URL;
+import { browser } from '$app/env';
+
+const API_PORT = <string>import.meta.env.VITE_API_PORT;
+
+let hostname = './';
+
+if (browser) {
+  hostname = `${window.location.protocol}//${window.location.hostname}:${API_PORT}`;
+}
 
 export type ApiError = { status: number; statusText: string; url: string; data?: { [key: string]: unknown } };
 
@@ -15,7 +23,7 @@ type ApiOptions = RequestInit & {
 };
 
 export async function send<T>(path: string, _options?: ApiOptions): Promise<{ headers: Headers; body: T }> {
-  const { baseUrl = API_URL, fetch: f, params, tracker, ...options } = { ..._options };
+  const { baseUrl = hostname, fetch: f, params, tracker, ...options } = { ..._options };
 
   if (tracker) {
     tracker.set(true);
@@ -42,7 +50,7 @@ export async function send<T>(path: string, _options?: ApiOptions): Promise<{ he
       try {
         data = await parseBody(r, options);
         // eslint-disable-next-line no-empty
-      } catch {}
+      } catch { }
       throw <ApiError>{ status, statusText, url, data };
     }
 

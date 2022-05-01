@@ -1,9 +1,16 @@
 import type { AudioDevices, BluetoothAudioDeviceProfile } from './types';
 
 import { writable } from 'svelte/store';
+import { browser } from '$app/env';
 import { get, post } from '$lib/api';
 
-const API_URL = <string>import.meta.env.VITE_API_URL;
+const API_PORT = <string>import.meta.env.VITE_API_PORT;
+
+let hostname = './';
+
+if (browser) {
+  hostname = `${window.location.protocol}//${window.location.hostname}:${API_PORT}`;
+}
 
 export const devices = writable<AudioDevices>(undefined);
 
@@ -24,7 +31,7 @@ export async function getDevices(): Promise<void> {
 }
 
 export function connectAudioWS(): () => void {
-  const url = `ws://${API_URL.replace(/^[^:]+:\/\//, '')}/audio/ws`;
+  const url = `ws://${window.location.hostname}:${API_PORT}/audio/ws`;
   const ws = new WebSocket(url, []);
 
   ws.onopen = async () => {
@@ -55,17 +62,17 @@ export function connectAudioWS(): () => void {
 }
 
 export async function setVolume(type: 'source' | 'sink', index: number, volume: number): Promise<void> {
-  await post(`${API_URL}/audio/volume`, JSON.stringify({ type, index, volume }));
+  await post(`${hostname}/audio/volume`, JSON.stringify({ type, index, volume }));
 }
 
 export async function toggleMute(type: 'source' | 'sink', index: number, mute: boolean): Promise<void> {
-  await post(`${API_URL}/audio/mute`, JSON.stringify({ type, index, mute }));
+  await post(`${hostname}/audio/mute`, JSON.stringify({ type, index, mute }));
 }
 
 export async function setProfile(index: number, profile: BluetoothAudioDeviceProfile): Promise<void> {
-  await post(`${API_URL}/audio/profile`, JSON.stringify({ index, profile }));
+  await post(`${hostname}/audio/profile`, JSON.stringify({ index, profile }));
 }
 
 export async function setDefault(type: 'source' | 'sink', index: number, name: string): Promise<void> {
-  await post(`${API_URL}/audio/default`, JSON.stringify({ type, index, name }));
+  await post(`${hostname}/audio/default`, JSON.stringify({ type, index, name }));
 }

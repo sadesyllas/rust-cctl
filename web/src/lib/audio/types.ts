@@ -9,21 +9,21 @@ export type Card = {
   index: number;
   description: string;
   bus: AudioDeviceBus;
-  form_factor: AudioDeviceFormFactor;
-  source_ids: Pick<CardDevice, 'index'>;
-  sink_ids: Pick<CardDevice, 'index'>;
+  formFactor: AudioDeviceFormFactor;
+  sourceIds: Pick<CardDevice, 'index'>;
+  sinkIds: Pick<CardDevice, 'index'>;
   profiles: BluetoothAudioDeviceProfile[];
-  active_profile: BluetoothAudioDeviceProfile;
+  activeProfile: BluetoothAudioDeviceProfile;
 };
 
 export type CardDevice = {
   index: number;
   name: string;
   description: string;
-  is_default: boolean;
+  isDefault: boolean;
   volume: number;
-  is_muted: boolean;
-  bluetooth_protocol: BluetoothProtocol;
+  isMuted: boolean;
+  bluetoothProtocol: BluetoothProtocol;
 };
 
 export enum AudioDeviceBus {

@@ -16,12 +16,12 @@
 
   $: bluetoothCard = $devices?.cards.filter((card) => card.bus === AudioDeviceBus.Bluetooth)[0];
   $: bluetoothCardProfiles = bluetoothCard?.profiles || [];
-  $: bluetoothCardActiveProfile = bluetoothCard?.active_profile;
+  $: bluetoothCardActiveProfile = bluetoothCard?.activeProfile;
   $: sources = $devices?.sources || [];
-  $: defaultSource = sources.find((source) => source.is_default);
+  $: defaultSource = sources.find((source) => source.isDefault);
   $: defaultSourceIndex = defaultSource?.index;
   $: sinks = $devices?.sinks || [];
-  $: defaultSink = sinks.find((sink) => sink.is_default);
+  $: defaultSink = sinks.find((sink) => sink.isDefault);
   $: defaultSinkIndex = defaultSink?.index;
 
   async function onBluetoothCardProfileChange(event: Event) {
@@ -31,11 +31,11 @@
       .then(() => getDevices())
       .then(async () => {
         if (profile === BluetoothAudioDeviceProfile.HeadsetHeadUnit) {
-          const bluetoothSource = sources.find((source) => source.bluetooth_protocol);
+          const bluetoothSource = sources.find((source) => source.bluetoothProtocol);
 
           await setDefault('source', bluetoothSource.index, bluetoothSource.name);
 
-          const bluetoothSink = sinks.find((sink) => sink.bluetooth_protocol);
+          const bluetoothSink = sinks.find((sink) => sink.bluetoothProtocol);
 
           await setDefault('sink', bluetoothSink.index, bluetoothSink.name);
         }
@@ -116,7 +116,7 @@
     <Volume
       id="input-volume"
       value={defaultSource?.volume}
-      muted={defaultSource?.is_muted}
+      muted={defaultSource?.isMuted}
       on:value={async ({ detail: { value } }) => await onVolumeChange('source', value)}
       on:mute={async () => await onMuteToggle('source', true)}
       on:unmute={async () => await onMuteToggle('source', false)}
@@ -129,7 +129,7 @@
     <Volume
       id="output-volume"
       value={defaultSink?.volume}
-      muted={defaultSink?.is_muted}
+      muted={defaultSink?.isMuted}
       on:value={async ({ detail: { value } }) => await onVolumeChange('sink', value)}
       on:mute={async () => await onMuteToggle('sink', true)}
       on:unmute={async () => await onMuteToggle('sink', false)}

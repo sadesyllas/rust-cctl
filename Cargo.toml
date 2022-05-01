@@ -7,11 +7,11 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.2", features = ["headers", "ws"] }
-clap = "2.33"
+axum = { version = "0.5", features = ["headers", "ws"] }
+clap = "3.1"
 glob = "0.3"
-opentelemetry = { version = "*", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "*", features = ["rt-tokio"] }
+opentelemetry = { version = "0.17", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }
 regex = "1.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -20,4 +20,4 @@ tokio = { version = "1.12", features = ["rt-multi-thread", "process", "macros"] 
 tokio-stream = { version = "0.1", features = ["io-util"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
-tracing-opentelemetry = "0.16"
+tracing-opentelemetry = "0.17"

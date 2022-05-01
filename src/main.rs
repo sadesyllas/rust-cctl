@@ -39,10 +39,10 @@ async fn main() {
 }
 
 fn get_config() -> Config {
-    let cli_config = clap::App::new("cctl")
+    let cli_config = clap::Command::new("cctl")
         .arg(
-            clap::Arg::with_name("host")
-                .short("c")
+            clap::Arg::new("host")
+                .short('c')
                 .long("host")
                 .takes_value(true)
                 .default_value("0.0.0.0")
@@ -50,8 +50,8 @@ fn get_config() -> Config {
                 .help("The host to listen as"),
         )
         .arg(
-            clap::Arg::with_name("port")
-                .short("p")
+            clap::Arg::new("port")
+                .short('p')
                 .long("port")
                 .takes_value(true)
                 .default_value("3003")

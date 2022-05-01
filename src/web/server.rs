@@ -5,8 +5,8 @@ use axum::{
         ws::{self, WebSocket},
         WebSocketUpgrade,
     },
-    handler::options,
-    response::{Headers, IntoResponse},
+    response::{AppendHeaders, IntoResponse},
+    routing::options,
     Json, Router,
 };
 use serde::Deserialize;
@@ -109,7 +109,7 @@ pub async fn start(config: Arc<Config>, pubsub_tx: Arc<Mutex<UnboundedSender<Pub
 
 fn wrap_cors(response: impl IntoResponse) -> impl IntoResponse {
     (
-        Headers([
+        AppendHeaders([
             ("Access-Control-Allow-Origin", "*"),
             ("Access-Control-Allow-Headers", "Content-Type"),
         ]),
