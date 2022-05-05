@@ -23,8 +23,22 @@ impl CardProfile {
             "a2dp_sink_aptx" => CardProfile::A2DPSinkAptX,
             "a2dp_sink_aptx_hd" => CardProfile::A2DPSinkAptXHD,
             "a2dp_sink_ldac" => CardProfile::A2DPSinkLDAC,
+            "off" => CardProfile::Off,
             _ => unreachable!(),
         }
+    }
+
+    pub fn to_pa_str(&self) -> String {
+        (match self {
+            CardProfile::HeadsetHeadUnit => "headset_head_unit",
+            CardProfile::A2DPSinkSBC => "a2dp_sink_sbc",
+            CardProfile::A2DPSinkAAC => "a2dp_sink_aac",
+            CardProfile::A2DPSinkAptX => "a2dp_sink_aptx",
+            CardProfile::A2DPSinkAptXHD => "a2dp_sink_aptx_hd",
+            CardProfile::A2DPSinkLDAC => "a2dp_sink_ldac",
+            CardProfile::Off => "off",
+        })
+        .to_string()
     }
 }
 

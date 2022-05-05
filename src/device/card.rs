@@ -5,6 +5,7 @@ use serde::Serialize;
 use super::{bus::Bus, card_profile::CardProfile, form_factor::FormFactor};
 
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Card {
     pub index: u64,
     pub name: String,

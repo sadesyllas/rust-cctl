@@ -135,7 +135,7 @@ pub async fn set_card_profile(index: u64, profile: CardProfile) -> io::Result<()
         .args(&[
             "set-card-profile",
             index.to_string().as_str(),
-            format!("{}", profile).as_str(),
+            profile.to_pa_str().as_str(),
         ])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
