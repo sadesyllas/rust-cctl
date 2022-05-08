@@ -14,7 +14,7 @@ use tokio::sync::{
     mpsc::{self, UnboundedReceiver, UnboundedSender},
     Mutex,
 };
-use tracing::{info, instrument, log::debug};
+use tracing::{instrument, log::info, span};
 
 use crate::{
     config::Config,
@@ -117,8 +117,9 @@ fn wrap_cors(response: impl IntoResponse) -> impl IntoResponse {
     )
 }
 
+#[instrument(level = "info")]
 async fn audio_handler(pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>) -> impl IntoResponse {
-    debug!("Fetching the state of audio devices in web server");
+    info!("Fetching the state of audio devices in web server");
 
     let (cards, sources, sinks) = audio::fetch_devices().await;
     let message_state =
@@ -146,7 +147,10 @@ async fn ws_handle_messages_socket(
 ) {
     loop {
         if let Some(message @ Message::AudioState { .. }) = rx.lock().await.recv().await {
-            debug!("Sending message down the websocket");
+            let span = span!(tracing::Level::INFO, "web socket message");
+            let _enter = span.enter();
+            info!("Sending message down the websocket");
+            drop(_enter);
 
             if socket
                 .send(ws::Message::Text(serde_json::to_string(&message).unwrap()))
@@ -167,6 +171,7 @@ struct VolumeRequest {
     volume: f64,
 }
 
+#[instrument]
 async fn handle_volume_request(
     Json(VolumeRequest {
         _type,
@@ -175,7 +180,7 @@ async fn handle_volume_request(
     }): Json<VolumeRequest>,
     pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>,
 ) {
-    debug!(
+    info!(
         "Setting the volume of {} device index {} to {}",
         _type, index, volume
     );
@@ -193,11 +198,12 @@ struct MuteRequest {
     mute: bool,
 }
 
+#[instrument]
 async fn handle_mute_request(
     Json(MuteRequest { _type, index, mute }): Json<MuteRequest>,
     pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>,
 ) {
-    debug!(
+    info!(
         "Setting the mute state of {} device index {} to {}",
         _type, index, mute
     );
@@ -215,18 +221,19 @@ struct DefaultRequest {
     name: String,
 }
 
+#[instrument]
 async fn handle_default_request(
     Json(DefaultRequest { _type, index, name }): Json<DefaultRequest>,
     pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>,
 ) {
-    debug!(
+    info!(
         "Setting the default {} device to index {} (name = {})",
         _type, index, name
     );
 
     audio::set_default_card_device(_type, index).await.unwrap();
 
-    debug!(
+    info!(
         "Moving audio clients to {} device index {} (name = {})",
         _type, index, name
     );
@@ -244,11 +251,12 @@ struct ProfileRequest {
     profile: CardProfile,
 }
 
+#[instrument]
 async fn handle_profile_request(
     Json(ProfileRequest { index, profile }): Json<ProfileRequest>,
     pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>,
 ) {
-    debug!(
+    info!(
         "Setting the default bluetooth card index {} profile to {}",
         index, profile
     );

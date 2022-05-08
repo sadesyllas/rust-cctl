@@ -41,6 +41,7 @@ pub async fn fetch_client_indexes(_type: CardDeviceType) -> io::Result<Vec<(u64,
     Ok(parse_client_indexes(&output))
 }
 
+#[instrument]
 pub async fn set_client_card_device(
     client_index: u64,
     _type: CardDeviceType,

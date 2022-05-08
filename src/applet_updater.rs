@@ -8,14 +8,13 @@ use tokio::{
         Mutex,
     },
 };
-use tracing::{instrument, log::error};
+use tracing::{log::error, span};
 
 use crate::{
     device::card_device::CardDevice,
     pubsub::{message::Message, message_topic::MessageTopic, PubSubMessage},
 };
 
-#[instrument]
 pub async fn start(pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>) {
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
 
@@ -32,6 +31,8 @@ pub async fn start(pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>) {
 
     loop {
         if let Some(Message::AudioState { ref sources, .. }) = rx.recv().await {
+            let span = span!(tracing::Level::INFO, "applet_updater.start loop");
+            let _enter = span.enter();
             let mut maybe_app_path: Option<String> = None;
             let mut volume_icon: Option<String> = None;
             let mut volume: Option<f64> = None;

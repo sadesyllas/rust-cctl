@@ -19,7 +19,7 @@ mod web;
 async fn main() {
     let tracer = opentelemetry_jaeger::new_pipeline()
         .with_agent_endpoint("localhost:6831")
-        .with_service_name("cctl")
+        .with_service_name("rust-cctl")
         .install_simple()
         .unwrap();
 
