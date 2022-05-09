@@ -1,11 +1,12 @@
 use std::{default::default, process::Stdio};
 
+use log::error;
 use regex::Regex;
 use tokio::{
     io::{self, AsyncReadExt},
     process::Command,
 };
-use tracing::{error, instrument};
+use tracing::instrument;
 
 use super::card_device_type::CardDeviceType;
 

@@ -1,11 +1,12 @@
 use std::{sync::Arc, time::Duration};
 
+use log::info;
 use tokio::{
     io,
     sync::{mpsc::UnboundedSender, Mutex},
     time::sleep,
 };
-use tracing::{log::info, span};
+use tracing::span;
 
 use crate::{
     device::audio,

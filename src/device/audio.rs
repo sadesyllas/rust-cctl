@@ -1,10 +1,11 @@
 use std::process::Stdio;
 
+use log::{error, info};
 use tokio::{
     io::{self, AsyncReadExt},
     process::Command,
 };
-use tracing::{error, instrument, log::info};
+use tracing::instrument;
 
 use crate::device::{
     audio_client, parse_card_devices::parse_card_devices, parse_cards::parse_cards,

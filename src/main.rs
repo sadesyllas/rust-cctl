@@ -4,6 +4,8 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use config::Config;
+use log::info;
+use tokio::net::UdpSocket;
 use tracing_subscriber::prelude::*;
 
 mod applet_updater;
@@ -17,15 +19,44 @@ mod web;
 
 #[tokio::main]
 async fn main() {
-    let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_agent_endpoint("localhost:6831")
-        .with_service_name("rust-cctl")
-        .install_simple()
-        .unwrap();
+    fern::Dispatch::new()
+        // Perform allocation-free log formatting
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}] {}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .chain(std::io::stdout())
+        .apply()
+        .expect("Failed to setup logging");
 
-    let opentelemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+    let jaeger_available = {
+        let sock = UdpSocket::bind("0.0.0.0:0").await.unwrap();
+        sock.connect("localhost:6831").await.unwrap();
+        sock.send(&[0]).await.unwrap();
+        sock.take_error().unwrap().is_none()
+    };
 
-    tracing_subscriber::registry().with(opentelemetry).init();
+    if jaeger_available {
+        info!("Jaeger is available");
+
+        let tracer = opentelemetry_jaeger::new_pipeline()
+            .with_agent_endpoint("localhost:6831")
+            .with_service_name("rust-cctl")
+            .install_simple()
+            .unwrap();
+
+        let opentelemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+        tracing_subscriber::registry().with(opentelemetry).init();
+    } else {
+        info!("Jaeger is not available");
+    }
 
     let config = Arc::new(get_config());
 

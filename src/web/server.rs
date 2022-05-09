@@ -9,12 +9,13 @@ use axum::{
     routing::options,
     Json, Router,
 };
+use log::info;
 use serde::Deserialize;
 use tokio::sync::{
     mpsc::{self, UnboundedReceiver, UnboundedSender},
     Mutex,
 };
-use tracing::{instrument, log::info, span};
+use tracing::{instrument, span};
 
 use crate::{
     config::Config,

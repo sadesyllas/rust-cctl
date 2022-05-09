@@ -1,6 +1,7 @@
 use std::{io::Read, path::PathBuf, process::Stdio, sync::Arc};
 
 use glob::glob;
+use log::error;
 use tokio::{
     process::Command,
     sync::{
@@ -8,7 +9,7 @@ use tokio::{
         Mutex,
     },
 };
-use tracing::{log::error, span};
+use tracing::span;
 
 use crate::{
     device::card_device::CardDevice,
