@@ -1,10 +1,11 @@
 #![feature(async_closure)]
 #![feature(default_free_fn)]
 
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, str::FromStr, sync::Arc};
 
 use config::Config;
 use log::info;
+use metrics_exporter_prometheus::PrometheusBuilder;
 use tokio::net::UdpSocket;
 use tracing_subscriber::prelude::*;
 
@@ -30,7 +31,7 @@ async fn main() {
                 message
             ))
         })
-        .level(log::LevelFilter::Debug)
+        .level(log::LevelFilter::Info)
         .chain(std::io::stdout())
         .apply()
         .expect("Failed to setup logging");
@@ -57,6 +58,11 @@ async fn main() {
     } else {
         info!("Jaeger is not available");
     }
+
+    PrometheusBuilder::new()
+        .with_http_listener(SocketAddr::from_str("0.0.0.0:9009").unwrap())
+        .install()
+        .expect("Failed to install prometheus recorder/exporter");
 
     let config = Arc::new(get_config());
 

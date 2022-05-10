@@ -1,21 +1,16 @@
 use std::sync::Arc;
 
-use tokio::sync::{
-    mpsc::{self, UnboundedSender},
-    Mutex,
-};
+use tokio::sync::mpsc::{self, UnboundedSender};
 
 use crate::{
     device::{audio, card_device::CardDevice, card_device_type::CardDeviceType},
     pubsub::{message::Message, message_topic::MessageTopic, PubSubMessage},
 };
 
-pub async fn start(pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>) {
+pub async fn start(pubsub_tx: Arc<UnboundedSender<PubSubMessage>>) {
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
 
     pubsub_tx
-        .lock()
-        .await
         .send((
             MessageTopic::Register,
             Message::new_register(MessageTopic::AudioState, Arc::new(tx)),

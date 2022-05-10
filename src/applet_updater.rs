@@ -4,10 +4,7 @@ use glob::glob;
 use log::error;
 use tokio::{
     process::Command,
-    sync::{
-        mpsc::{self, UnboundedSender},
-        Mutex,
-    },
+    sync::mpsc::{self, UnboundedSender},
 };
 use tracing::span;
 
@@ -16,12 +13,10 @@ use crate::{
     pubsub::{message::Message, message_topic::MessageTopic, PubSubMessage},
 };
 
-pub async fn start(pubsub_tx: Arc<Mutex<UnboundedSender<PubSubMessage>>>) {
+pub async fn start(pubsub_tx: Arc<UnboundedSender<PubSubMessage>>) {
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
 
     pubsub_tx
-        .lock()
-        .await
         .send((
             MessageTopic::Register,
             Message::new_register(MessageTopic::AudioState, Arc::new(tx)),

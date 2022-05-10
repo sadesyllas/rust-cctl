@@ -11,8 +11,11 @@ axum = { version = "0.5", features = ["headers", "ws"] }
 chrono = "0.4"
 clap = "3.1"
 fern = "0.6"
+futures = "0.3"
 glob = "0.3"
 log = "0.4"
+metrics = "0.18"
+metrics-exporter-prometheus = "0.9"
 opentelemetry = { version = "0.17", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }
 regex = "1.5"

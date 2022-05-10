@@ -1,5 +1,6 @@
 use std::process::Stdio;
 
+use futures::future::join_all;
 use log::{error, info};
 use tokio::{
     io::{self, AsyncReadExt},
@@ -29,17 +30,11 @@ impl std::fmt::Display for CardDeviceType {
 
 #[instrument]
 pub async fn fetch_devices() -> (Vec<Card>, Vec<CardDevice>, Vec<CardDevice>) {
-    let cards = tokio::spawn(fetch_cards()).await.unwrap().unwrap();
-    let sources = tokio::spawn(fetch_card_devices(CardDeviceType::Source))
-        .await
-        .unwrap()
-        .unwrap();
-    let sinks = tokio::spawn(fetch_card_devices(CardDeviceType::Sink))
-        .await
-        .unwrap()
-        .unwrap();
+    let cards = fetch_cards();
+    let sources = fetch_card_devices(CardDeviceType::Source);
+    let sinks = fetch_card_devices(CardDeviceType::Sink);
 
-    (cards, sources, sinks)
+    tokio::try_join!(cards, sources, sinks).unwrap()
 }
 
 #[instrument]
@@ -159,17 +154,24 @@ pub async fn set_card_profile(index: u64, profile: CardProfile) -> io::Result<()
 #[instrument]
 pub async fn move_audio_clients(_type: CardDeviceType, index: u64, name: &str) -> io::Result<()> {
     let clients = audio_client::fetch_client_indexes(_type).await?;
+    let mut moves = Vec::new();
 
     for (client_index, current_index) in clients {
         if current_index != index {
-            audio_client::set_client_card_device(client_index, _type, name).await?;
+            moves.push(async move {
+                audio_client::set_client_card_device(client_index, _type, name).await?;
 
-            info!(
-                "Moved audio client index {} to default {} {}",
-                client_index, _type, name
-            );
+                info!(
+                    "Moved audio client index {} to default {} {}",
+                    client_index, _type, name
+                );
+
+                io::Result::Ok(())
+            });
         }
     }
+
+    join_all(moves).await;
 
     Ok(())
 }

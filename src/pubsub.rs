@@ -3,10 +3,7 @@ pub mod message_topic;
 
 use std::{collections::HashMap, sync::Arc};
 
-use tokio::sync::{
-    mpsc::{self, UnboundedReceiver, UnboundedSender},
-    Mutex,
-};
+use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 use crate::pubsub::message_topic::MessageTopic;
 
@@ -15,14 +12,14 @@ use self::message::Message;
 pub type PubSubMessage = (MessageTopic, Message);
 
 pub fn start() -> (
-    Arc<Mutex<UnboundedSender<PubSubMessage>>>,
+    Arc<UnboundedSender<PubSubMessage>>,
     tokio::task::JoinHandle<()>,
 ) {
     let (tx, rx) = mpsc::unbounded_channel::<PubSubMessage>();
 
     let task = tokio::spawn(start_loop(rx));
 
-    (Arc::new(Mutex::new(tx)), task)
+    (Arc::new(tx), task)
 }
 
 async fn start_loop(mut rx: UnboundedReceiver<PubSubMessage>) {
@@ -32,10 +29,14 @@ async fn start_loop(mut rx: UnboundedReceiver<PubSubMessage>) {
     loop {
         let message = rx.recv().await;
 
-        if let Some((MessageTopic::Register, Message::Register { topic, tx })) = message {
-            handle_register(topic, tx, &mut registrations);
-        } else if let Some((topic, message)) = message {
-            broadcast(topic, message, &registrations);
+        match message {
+            Some((MessageTopic::Register, Message::Register { topic, tx })) => {
+                handle_register(topic, tx, &mut registrations);
+            }
+            Some((topic, message)) => {
+                broadcast(topic, message, &registrations);
+            }
+            _ => (),
         }
     }
 }
