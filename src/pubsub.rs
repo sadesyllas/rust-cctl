@@ -34,7 +34,7 @@ async fn start_loop(mut rx: UnboundedReceiver<PubSubMessage>) {
                 handle_register(topic, tx, &mut registrations);
             }
             Some((topic, message)) => {
-                broadcast(topic, message, &registrations);
+                broadcast(topic, message, &mut registrations);
             }
             _ => (),
         }
@@ -55,11 +55,24 @@ fn handle_register(
 fn broadcast(
     topic: MessageTopic,
     message: Message,
-    registrations: &HashMap<MessageTopic, Vec<Arc<UnboundedSender<Message>>>>,
+    registrations: &mut HashMap<MessageTopic, Vec<Arc<UnboundedSender<Message>>>>,
 ) {
-    if let Some(registrations) = registrations.get(&topic) {
-        for tx in registrations {
-            tx.send(message.clone()).unwrap();
+    if let Some(registrations) = registrations.get_mut(&topic) {
+        let mut indexes_to_remove = Vec::new();
+
+        for (i, tx) in registrations.iter().enumerate() {
+            if tx.is_closed() {
+                indexes_to_remove.push(i);
+                continue;
+            }
+
+            if tx.send(message.clone()).is_err() {
+                indexes_to_remove.push(i);
+            }
         }
+
+        indexes_to_remove.into_iter().for_each(|i| {
+            registrations.remove(i);
+        });
     }
 }
