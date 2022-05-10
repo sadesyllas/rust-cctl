@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function kill_cctl {
-  killall cctl
+  killall rust-cctl
 }
 
 trap kill_cctl INT
@@ -12,7 +12,7 @@ trap kill_cctl HUP
 
 cd "$(dirname "$0")"
 
-./target/release/cctl &
+./target/release/rust-cctl &
 
 cd web
 

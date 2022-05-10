@@ -157,32 +157,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4872d67bab6358e59559027aa3b9157c53d9358c51423c17554809a8858e0f8"
 
 [[package]]
-name = "cctl"
-version = "0.1.0"
-dependencies = [
- "axum",
- "chrono",
- "clap",
- "fern",
- "futures",
- "glob",
- "log",
- "metrics",
- "metrics-exporter-prometheus",
- "opentelemetry",
- "opentelemetry-jaeger",
- "regex",
- "serde",
- "serde_json",
- "serde_repr",
- "tokio",
- "tokio-stream",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1015,6 +989,32 @@ name = "regex-syntax"
 version = "0.6.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
+
+[[package]]
+name = "rust-cctl"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "clap",
+ "fern",
+ "futures",
+ "glob",
+ "log",
+ "metrics",
+ "metrics-exporter-prometheus",
+ "opentelemetry",
+ "opentelemetry-jaeger",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "ryu"
