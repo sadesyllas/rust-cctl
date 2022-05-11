@@ -17,17 +17,6 @@ use super::{
     card_profile::CardProfile,
 };
 
-impl std::fmt::Display for CardDeviceType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CardDeviceType::Source => f.write_str("Source").unwrap(),
-            CardDeviceType::Sink => f.write_str("Sink").unwrap(),
-        }
-
-        Ok(())
-    }
-}
-
 #[instrument]
 pub async fn fetch_devices() -> (Vec<Card>, Vec<CardDevice>, Vec<CardDevice>) {
     let cards = fetch_cards();
