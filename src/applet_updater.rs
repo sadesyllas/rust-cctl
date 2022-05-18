@@ -50,7 +50,7 @@ pub async fn start(pubsub_tx: Arc<UnboundedSender<PubSubMessage>>) {
                     "microphone-sensitivity-muted-symbolic".to_owned()
                 } else if new_default_source.volume < 25.0 {
                     "microphone-sensitivity-low-symbolic".to_owned()
-                } else if new_default_source.volume >= 25.0 || new_default_source.volume <= 75.0 {
+                } else if new_default_source.volume >= 25.0 && new_default_source.volume <= 75.0 {
                     "microphone-sensitivity-medium-symbolic".to_owned()
                 } else {
                     "microphone-sensitivity-high-symbolic".to_owned()
